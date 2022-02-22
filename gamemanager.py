@@ -26,10 +26,19 @@ def game_loop():
     screen = pygame.display.set_mode(gm.size)
     moves = []
     piece = None
+    selected_piece = None
+    last_piece = None
     captured_pieces = []
     moved = False
+    moved_once = False
+    can_jump = False
+    turn_continues = False
+    new_pos = None
     captured_a_piece = False
+    double_jumping_pos = None
+    captured_a_piece_last_selection = False
     captured_piece_id = None
+    not_turn = "white" #player whose turn it isn't
 
     graphics.draw_screen(screen, height, board, moves, piece)
     while gm.game_running:
@@ -42,27 +51,51 @@ def game_loop():
 
             elif event.type == pygame.MOUSEBUTTONUP:
                 pos = pygame.mouse.get_pos()
+                pc = piece_from_click(pos, board.piece_arr, height)
 
-                if piece != None:
-                    moves, board.piece_arr, moved, piece, captured_piece_id, captured_a_piece = move_piece(piece, board.piece_arr, moves, height, pos, captured_pieces)
-                else:
+                if pc.side != not_turn:
+                    if piece is not None:
+                        moves, board.piece_arr, moved, piece, captured_piece_id, captured_a_piece, new_pos = move_piece(piece, board.piece_arr, moves, height, pos, captured_pieces)
+                        moved_once = True
+                    else:
+                        piece = piece_from_click(pos, board.piece_arr, height)
+
+                    if piece.side != "empty":
+                        selected_piece = piece
+                    else:
+                        selected_piece = None
+                        captured_a_piece_last_selection = captured_a_piece
+
                     piece = piece_from_click(pos, board.piece_arr, height)
-
-                piece = piece_from_click(pos, board.piece_arr, height)
-                if not moved:
                     moves = []
-                    captured_pieces = []
-                    moves, captured_pieces = get_moves(piece, board.piece_arr, moves, captured_pieces)
+                    if (not moved and not turn_continues) or \
+                            (not moved and double_jumping_pos is not None and turn_continues and piece.x == double_jumping_pos[0] and piece.y == double_jumping_pos[1]):
+                        moves, captured_pieces = get_moves(piece, board.piece_arr, moves, captured_pieces)
 
-                board.piece_arr = check_for_king(board.piece_arr)
+                    board.piece_arr = check_for_king(board.piece_arr)
 
-                if len(captured_pieces) > 0 and moved and captured_piece_id is not None and captured_a_piece:
-                    x = captured_pieces[captured_piece_id].x
-                    y = captured_pieces[captured_piece_id].y
-                    board.piece_arr[y][x].isking = False
-                    board.piece_arr[y][x].side = "empty"
+                    if len(captured_pieces) > 0 and moved and captured_piece_id is not None and captured_a_piece:
+                        x = captured_pieces[captured_piece_id].x
+                        y = captured_pieces[captured_piece_id].y
+                        board.piece_arr[y][x].isking = False
+                        board.piece_arr[y][x].side = "empty"
 
-                graphics.draw_screen(screen, height, board, moves, piece)
+                    if new_pos is not None:
+                        test_piece = gameagents.Piece("black" if not_turn == "white" else "white", board, new_pos[0], new_pos[1])
+                        turn_continues = (can_jmp(test_piece, board.piece_arr) and captured_a_piece_last_selection) or not moved_once
+
+                        if turn_continues:
+                            moves, captured_pieces = get_moves(test_piece, board.piece_arr, moves, captured_pieces)
+                            double_jumping_pos = (test_piece.x, test_piece.y)
+                        else:
+                            not_turn = "black" if not_turn == "white" else "white"
+                            moved_once = False
+                            double_jumping_pos = None
+
+                        if (last_piece is None and moved_once and not turn_continues) or not moved_once:
+                            last_piece = selected_piece
+
+                    graphics.draw_screen(screen, height, board, moves, piece)
 
 
 def coord_from_click(pos, size):
@@ -76,9 +109,16 @@ def piece_from_click(pos, piece_arr, size):
     piece = piece_arr[pos[1]][pos[0]]
     return piece
 
+def can_jmp(piece, piece_arr):
+    m = []
+    cap_p = []
+    mvs = get_moves(piece, piece_arr, m, cap_p)
+    return len(mvs[1]) > 0 #if the piece can still jump, the turn hasn't expired
+
 # I put this together pretty quickly. There's probably a more elegant way to write this function
 def get_moves(piece, piece_arr, moves, captured_pieces):
-    temp_moves = []
+    moves = []
+    captured_pieces = []
     if piece.side != "empty":
         x = piece.x
         y = piece.y
@@ -125,6 +165,7 @@ def move_piece(piece, piece_arr, moves, size, clickpos, captured_pieces):
     pos = coord_from_click(clickpos, size)
     captured_piece_id = None
     did_capture = False
+    new_pos = None
 
     if pos in moves:
         if len(captured_pieces) > 0: #if a piece was captured, determine which one
@@ -147,7 +188,8 @@ def move_piece(piece, piece_arr, moves, size, clickpos, captured_pieces):
         piece_arr[pos[1]][pos[0]].isking = is_king
         moves = []
         moved = True
-    return moves, piece_arr, moved, piece, captured_piece_id, did_capture
+        new_pos = pos
+    return moves, piece_arr, moved, piece, captured_piece_id, did_capture, new_pos
 
 def check_for_king(piece_arr):
     for y in range(0, 8):
