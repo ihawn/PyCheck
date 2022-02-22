@@ -2,7 +2,7 @@ import pygame
 
 class Board:
     def __init__(self):
-        board_arr = []
+        piece_arr = []
         for y in range(0, 8):
             row = []
             for x in range(0, 8):
@@ -15,8 +15,8 @@ class Board:
                         row.append(Piece("empty", self, x, y))
                 else:
                     row.append(Piece("empty", self, x, y))
-            board_arr.append(row)
-        self.board_arr = board_arr
+            piece_arr.append(row)
+        self.piece_arr = piece_arr
 
 class Piece:
     def __init__(self, side, board, x, y):
@@ -27,4 +27,4 @@ class Piece:
         self.isking = False
 
 def valid_square(x, y):
-    return (x % 2 == 0 and y % 2 == 0) or (x % 2 == 1 and y % 2 == 1)
+    return ((x + 1) % 2 == 0 and y % 2 == 0) or ((x + 1) % 2 == 1 and y % 2 == 1)

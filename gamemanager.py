@@ -27,4 +27,4 @@ def game_loop():
             elif event.type == QUIT:
                 gm.game_running = False
 
-        graphics.draw_screen(screen, 1024)
+        graphics.draw_screen(screen, 1024, board)
