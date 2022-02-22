@@ -1,5 +1,6 @@
 import pygame
 import gameagents
+from pygame import gfxdraw
 
 class Square(pygame.sprite.Sprite):
     def __init__(self, color, size):
@@ -15,8 +16,8 @@ def draw_screen(screen, linearsize, board):
 
 def draw_board(screen, linearsize):
     squarewidth = linearsize/8
-    blacksquare = Square((42, 109, 222), squarewidth)
-    whitesquare = Square((199, 220, 255), squarewidth)
+    blacksquare = Square((42, 109, 222), squarewidth*0.99)
+    whitesquare = Square((199, 220, 255), squarewidth*0.99)
 
     for x in range(0, 8):
         for y in range(0, 8):
@@ -30,10 +31,18 @@ def draw_pieces(screen, piece_arr, linearsize):
     r = squarewidth * 0.35
     black = (10, 10, 10)
     white = (250, 250, 250)
+    border_b = (0, 0, 0)
+    border_w = (255, 255, 255)
     for y in range(0, 8):
         for x in range(0, 8):
             pos = (piece_arr[x][y].x*squarewidth + squarewidth/2, piece_arr[x][y].y*squarewidth + squarewidth/2)
             if piece_arr[x][y].side == "black":
-                pygame.draw.circle(screen, black, pos, r)
+                #pygame.draw.circle(screen, black, pos, r)
+                draw_circle(screen, pos, r, black)
             elif piece_arr[x][y].side == "white":
-                pygame.draw.circle(screen, white, pos, r)
+                #pygame.draw.circle(screen, white, pos, r)
+                draw_circle(screen, pos, r, white)
+
+def draw_circle(surface, pos, r, color):
+    gfxdraw.aacircle(surface, int(pos[0]), int(pos[1]), int(r), color)
+    gfxdraw.filled_circle(surface, int(pos[0]), int(pos[1]), int(r), color)

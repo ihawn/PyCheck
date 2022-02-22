@@ -1,6 +1,7 @@
 import pygame
 import gameagents
 import graphics
+import tkinter as tk
 from pygame.locals import *
 
 class GameManager:
@@ -11,8 +12,12 @@ class GameManager:
         self.size = width, height
 
 def game_loop():
+    root = tk.Tk()
+    h = root.winfo_screenheight()
+    height = h*0.9
+
     pygame.init()
-    gm = GameManager(1024, 1024)
+    gm = GameManager(height, height)
     board = gameagents.Board()
     screen = pygame.display.set_mode(gm.size)
 
@@ -27,4 +32,4 @@ def game_loop():
             elif event.type == QUIT:
                 gm.game_running = False
 
-        graphics.draw_screen(screen, 1024, board)
+        graphics.draw_screen(screen, height, board)

@@ -1,4 +1,9 @@
-import pygame
+class Player:
+    def __init__(self, side, pieces):
+        self.side = side
+        self.myturn = side == "black"
+        self.pieces = pieces
+        self.piecescount = len(pieces)
 
 class Board:
     def __init__(self):
@@ -7,9 +12,9 @@ class Board:
             row = []
             for x in range(0, 8):
                 if valid_square(x, y):
-                    if y <= 2:
+                    if y >= 5:
                         row.append(Piece("black", self, x, y))
-                    elif y >= 5:
+                    elif y <= 2:
                         row.append(Piece("white", self, x, y))
                     else:
                         row.append(Piece("empty", self, x, y))
