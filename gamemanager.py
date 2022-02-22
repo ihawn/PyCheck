@@ -31,7 +31,6 @@ def game_loop():
     captured_pieces = []
     moved = False
     moved_once = False
-    can_jump = False
     turn_continues = False
     new_pos = None
     captured_a_piece = False
@@ -53,6 +52,7 @@ def game_loop():
                 pos = pygame.mouse.get_pos()
                 pc = piece_from_click(pos, board.piece_arr, height)
 
+                # movement logic
                 if pc.side != not_turn:
                     if piece is not None:
                         moves, board.piece_arr, moved, piece, captured_piece_id, captured_a_piece, new_pos = move_piece(piece, board.piece_arr, moves, height, pos, captured_pieces)
