@@ -60,7 +60,7 @@ def draw_potential_moves(screen, linearsize, moves, piece):
     r = squarewidth * 0.38
     highlight_color = (255, 60, 0)
 
-    if piece is not None:
+    if piece is not None and piece.side != "empty":
         pos = (piece.x*squarewidth + squarewidth/2, piece.y*squarewidth + squarewidth/2)
         draw_circle(screen, pos, r, highlight_color)
 
