@@ -65,7 +65,6 @@ def game_loop():
                     else:
                         selected_piece = None
                         captured_a_piece_last_selection = captured_a_piece
-
                     piece = piece_from_click(pos, board.piece_arr, height)
                     moves = []
                     if (not moved and not turn_continues) or \
@@ -82,6 +81,8 @@ def game_loop():
 
                     if new_pos is not None:
                         test_piece = gameagents.Piece("black" if not_turn == "white" else "white", board, new_pos[0], new_pos[1])
+                        selected_is_king = board.piece_arr[new_pos[1]][new_pos[0]].isking
+                        test_piece.isking = selected_is_king
                         turn_continues = (can_jmp(test_piece, board.piece_arr) and captured_a_piece_last_selection) or not moved_once
 
                         if turn_continues:
