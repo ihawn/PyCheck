@@ -11,12 +11,24 @@ class Square(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect()
 
 
-def draw_screen(screen, linearsize, board, moves, piece):
+def draw_screen(screen, linearsize, board, moves, piece, game_over, winner):
     screen.fill((0, 0, 0))
     draw_board(screen, linearsize)
     if len(moves) > 0:
         draw_potential_moves(screen, linearsize, moves, piece)
     draw_pieces(screen, board.piece_arr, linearsize)
+
+    if game_over:
+        largefont = pygame.font.SysFont('Corbel', 150)
+        medfont = pygame.font.SysFont('Corbel', 100)
+        col = (0, 0, 0)
+        prompt = largefont.render(winner + " Wins!", True, 0)
+        subtitle = medfont.render("Press Backspace", True, col)
+        rect = prompt.get_rect(center=(linearsize / 2, linearsize / 4))
+        subtitle_rect = subtitle.get_rect(center=(linearsize / 2, linearsize / 4 + linearsize / 4))
+        screen.blit(prompt, rect)
+        screen.blit(subtitle, subtitle_rect)
+
     pygame.display.flip()
 
 

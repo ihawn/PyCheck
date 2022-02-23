@@ -1,6 +1,8 @@
 import pygame
 
 def draw_menu(screen, screen_size, mouse_pos, clicked, choice):
+    screen.fill((0, 0, 0))
+
     largefont = pygame.font.SysFont('Corbel', 100)
     medfont = pygame.font.SysFont('Corbel', 65)
     smallmedfont = pygame.font.SysFont('Corbel', 50)

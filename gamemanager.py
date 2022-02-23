@@ -38,6 +38,12 @@ def game_loop():
     double_jumping_pos = None
     captured_a_piece_last_selection = False
     captured_piece_id = None
+    game_over = False
+    winner = ""
+    black_piece_count = 0
+    black_move_count = 0
+    white_piece_count = 0
+    white_move_count = 0
     not_turn = "white" #player whose turn it isn't
 
     menu_choice = [-1, -1]
@@ -51,8 +57,31 @@ def game_loop():
                 menu_choice, in_game = menu.draw_menu(screen, height, pos, False, menu_choice)
 
             if event.type == KEYDOWN:
-                if event.key == K_BACKSPACE:
-                    gm.game_running = False
+                if event.key == K_BACKSPACE and game_over:
+                    in_game = False
+                    board = gameagents.Board()
+                    screen = pygame.display.set_mode(gm.size)
+                    in_game = False
+                    moves = []
+                    piece = None
+                    selected_piece = None
+                    last_piece = None
+                    captured_pieces = []
+                    moved = False
+                    moved_once = False
+                    turn_continues = False
+                    new_pos = None
+                    captured_a_piece = False
+                    double_jumping_pos = None
+                    captured_a_piece_last_selection = False
+                    captured_piece_id = None
+                    game_over = False
+                    winner = ""
+                    black_piece_count = 0
+                    black_move_count = 0
+                    white_piece_count = 0
+                    white_move_count = 0
+                    not_turn = "white"
             elif event.type == QUIT:
                 gm.game_running = False
 
@@ -80,7 +109,7 @@ def game_loop():
                         moves = []
                         if (not moved and not turn_continues) or \
                                 (not moved and double_jumping_pos is not None and turn_continues and piece.x == double_jumping_pos[0] and piece.y == double_jumping_pos[1]):
-                            moves, captured_pieces = get_moves(piece, board.piece_arr, moves, captured_pieces)
+                            moves, captured_pieces = get_moves(piece, board.piece_arr, moves, captured_pieces, turn_continues)
 
                         board.piece_arr = check_for_king(board.piece_arr)
 
@@ -94,10 +123,10 @@ def game_loop():
                             test_piece = gameagents.Piece("black" if not_turn == "white" else "white", board, new_pos[0], new_pos[1])
                             selected_is_king = board.piece_arr[new_pos[1]][new_pos[0]].isking
                             test_piece.isking = selected_is_king
-                            turn_continues = (can_jmp(test_piece, board.piece_arr) and captured_a_piece_last_selection) or not moved_once
+                            turn_continues = (can_jmp(test_piece, board.piece_arr, True) and captured_a_piece_last_selection) or not moved_once
 
                             if turn_continues:
-                                moves, captured_pieces = get_moves(test_piece, board.piece_arr, moves, captured_pieces)
+                                moves, captured_pieces = get_moves(test_piece, board.piece_arr, moves, captured_pieces, turn_continues)
                                 double_jumping_pos = (test_piece.x, test_piece.y)
                             else:
                                 not_turn = "black" if not_turn == "white" else "white"
@@ -107,7 +136,20 @@ def game_loop():
                             if (last_piece is None and moved_once and not turn_continues) or not moved_once:
                                 last_piece = selected_piece
 
-                        graphics.draw_screen(screen, height, board, moves, piece)
+                            #Determine if there is a winner
+                            black_piece_count, black_move_count, white_piece_count, white_move_count = get_game_stats(board.piece_arr, turn_continues)
+                            print("")
+                            print(black_piece_count)
+                            print(black_move_count)
+                            print(white_piece_count)
+                            print(white_move_count)
+                            p_count = white_piece_count if not_turn == "black" else black_piece_count
+                            m_count = white_move_count if not_turn == "black" else black_move_count
+                            game_over = p_count == 0 or m_count <= 2
+                            menu_choice = [-1, -1] if game_over else menu_choice
+                            winner = not_turn.capitalize()
+
+                        graphics.draw_screen(screen, height, board, moves, piece, game_over, winner)
 
 
 def coord_from_click(pos, size):
@@ -115,20 +157,19 @@ def coord_from_click(pos, size):
     y = int(8 * pos[1] / size)
     return x, y
 
-
 def piece_from_click(pos, piece_arr, size):
     pos = coord_from_click(pos, size)
     piece = piece_arr[pos[1]][pos[0]]
     return piece
 
-def can_jmp(piece, piece_arr):
+def can_jmp(piece, piece_arr, is_double):
     m = []
     cap_p = []
-    mvs = get_moves(piece, piece_arr, m, cap_p)
+    mvs = get_moves(piece, piece_arr, m, cap_p, is_double)
     return len(mvs[1]) > 0 #if the piece can still jump, the turn hasn't expired
 
 # I put this together pretty quickly. There's probably a more elegant way to write this function
-def get_moves(piece, piece_arr, moves, captured_pieces):
+def get_moves(piece, piece_arr, moves, captured_pieces, is_double):
     moves = []
     captured_pieces = []
     if piece.side != "empty":
@@ -167,6 +208,9 @@ def get_moves(piece, piece_arr, moves, captured_pieces):
                     moves.append((x + 2*k, y + 2*k))
                     captured_pieces.append(piece_arr[y + k][x + k])
 
+    if is_double:
+        moves = filter_double_jump_moves(moves, piece)
+
     return moves, captured_pieces
 
 
@@ -203,6 +247,14 @@ def move_piece(piece, piece_arr, moves, size, clickpos, captured_pieces):
         new_pos = pos
     return moves, piece_arr, moved, piece, captured_piece_id, did_capture, new_pos
 
+def filter_double_jump_moves(moves, piece):
+    temp_moves = []
+    for i in range(0, len(moves)):
+        if abs(moves[i][0] - piece.x) > 1 and abs(moves[i][1] - piece.y) > 1:
+            temp_moves.append(moves[i])
+    return temp_moves
+
+
 def check_for_king(piece_arr):
     for y in range(0, 8):
         for x in range(0, 8):
@@ -210,3 +262,22 @@ def check_for_king(piece_arr):
             if (p.side == "white" and y == 7) or (p.side == "black" and y == 0):
                 piece_arr[p.y][p.x].isking = True
     return piece_arr
+
+def get_game_stats(pieces, is_double):
+    black_piece_count = 0
+    black_move_count = 0
+    white_piece_count = 0
+    white_move_count = 0
+    for y in range(0, 8):
+        for x in range(0, 8):
+            m = []
+            cap_p = []
+            mvs = get_moves(pieces[y][x], pieces, m, cap_p, is_double)
+            if pieces[y][x].side == "black":
+                black_piece_count += 1
+                black_move_count += len(mvs)
+            elif pieces[y][x].side == "white":
+                white_piece_count += 1
+                white_move_count += len(mvs)
+
+    return black_piece_count, black_move_count, white_piece_count, white_move_count
