@@ -4,6 +4,7 @@ import gameagents
 import graphics
 import tkinter as tk
 import menu
+import ai
 from pygame.locals import *
 
 
@@ -90,22 +91,22 @@ def game_loop():
                     menu_choice, in_game = menu.draw_menu(screen, height, pos, True, menu_choice)
 
                 if in_game:
-                    pc = piece_from_click(pos, board.piece_arr, height)
+                    pc, move_method_id = get_piece(pos, board.piece_arr, height, not_turn, menu_choice, turn_continues)
 
                     # movement logic
                     if pc.side != not_turn:
                         if piece is not None:
-                            moves, board.piece_arr, moved, piece, captured_piece_id, captured_a_piece, new_pos = move_piece(piece, board.piece_arr, moves, height, pos, captured_pieces)
+                            moves, board.piece_arr, moved, piece, captured_piece_id, captured_a_piece, new_pos = move_piece(piece, board.piece_arr, moves, height, pos, captured_pieces, move_method_id)
                             moved_once = True
                         else:
-                            piece = piece_from_click(pos, board.piece_arr, height)
+                            piece, move_method_id = get_piece(pos, board.piece_arr, height, not_turn, menu_choice, turn_continues)
 
                         if piece.side != "empty":
                             selected_piece = piece
                         else:
                             selected_piece = None
                             captured_a_piece_last_selection = captured_a_piece
-                        piece = piece_from_click(pos, board.piece_arr, height)
+                        piece, move_method_id = get_piece(pos, board.piece_arr, height, not_turn, menu_choice, turn_continues)
                         moves = []
                         if (not moved and not turn_continues) or \
                                 (not moved and double_jumping_pos is not None and turn_continues and piece.x == double_jumping_pos[0] and piece.y == double_jumping_pos[1]):
@@ -138,11 +139,6 @@ def game_loop():
 
                             #Determine if there is a winner
                             black_piece_count, black_move_count, white_piece_count, white_move_count = get_game_stats(board.piece_arr, turn_continues)
-                            print("")
-                            print(black_piece_count)
-                            print(black_move_count)
-                            print(white_piece_count)
-                            print(white_move_count)
                             p_count = white_piece_count if not_turn == "black" else black_piece_count
                             m_count = white_move_count if not_turn == "black" else black_move_count
                             game_over = p_count == 0 or m_count <= 2
@@ -157,10 +153,26 @@ def coord_from_click(pos, size):
     y = int(8 * pos[1] / size)
     return x, y
 
-def piece_from_click(pos, piece_arr, size):
-    pos = coord_from_click(pos, size)
-    piece = piece_arr[pos[1]][pos[0]]
-    return piece
+def get_piece(pos, piece_arr, size, not_turn, choice, is_double):
+    piece = None
+    move_method_id = 0
+    if not_turn == "white":
+        if choice[0] == 0: #human
+            pos = coord_from_click(pos, size)
+            piece = piece_arr[pos[1]][pos[0]]
+            move_method_id = 0
+        elif choice[0] == 1: #dumb ai
+            piece = ai.select_piece_dumb_ai(piece_arr, "black", is_double)
+            move_method_id = 1
+    elif not_turn == "black":
+        if choice[1] == 0: #human
+            pos = coord_from_click(pos, size)
+            piece = piece_arr[pos[1]][pos[0]]
+            move_method_id = 0
+        elif choice[1] == 1: #dumbai
+            piece = ai.select_piece_dumb_ai(piece_arr, "white", is_double)
+            move_method_id = 1
+    return piece, move_method_id
 
 def can_jmp(piece, piece_arr, is_double):
     m = []
@@ -214,11 +226,19 @@ def get_moves(piece, piece_arr, moves, captured_pieces, is_double):
     return moves, captured_pieces
 
 
-def move_piece(piece, piece_arr, moves, size, clickpos, captured_pieces):
+def move_piece(piece, piece_arr, moves, size, clickpos, captured_pieces, move_method_id):
     moved = False
     old_x = piece.x
     old_y = piece.y
-    pos = coord_from_click(clickpos, size)
+
+    pos = None
+    if move_method_id == 0: #human
+        pos = coord_from_click(clickpos, size)
+    elif move_method_id == 1: #dumb
+        print(moves)
+        pos = ai.select_move_dumb_ai(moves)
+
+
     captured_piece_id = None
     did_capture = False
     new_pos = None

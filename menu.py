@@ -71,7 +71,7 @@ def DrawButton(screen, col1, col2, col3, text, pos, xsize, ysize, mousepos, clic
     if pos[0] <= mousepos[0] <= pos[0] + xsize and pos[1] <= mousepos[1] <= pos[1] + ysize or choice[column_id] == choice_id:
         if clicked or (choice[column_id] == choice_id and choice_id != 4):
             pygame.draw.rect(screen, col3, [pos[0], pos[1], xsize, ysize])
-            choice[column_id] = choice_id
+            choice[column_id] = choice_id if choice_id != 4 else choice[column_id]
             t_rect = text.get_rect(center=(pos[0] + xsize / 2, pos[1] + ysize / 2))
             screen.blit(text, t_rect)
 
